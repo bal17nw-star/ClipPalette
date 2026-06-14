@@ -70,7 +70,7 @@ npm run tauri build
 %APPDATA%\com.clippalette.app\clippalette.db
 ```
 
-最大 100,000 件のクリップを保存できます（超過時は未ピンの古いものから自動削除）。
+無制限でクリップを保存できます。
 
 ---
 
@@ -140,7 +140,7 @@ npm run tauri build
 %APPDATA%\com.clippalette.app\clippalette.db
 ```
 
-Stores up to 100,000 clips. Oldest unpinned clips are automatically pruned when the limit is reached.
+You can save an unlimited number of clips.
 
 ### Project Structure
 
