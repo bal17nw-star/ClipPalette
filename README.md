@@ -72,7 +72,7 @@ npm run tauri build
 
 無制限でクリップを保存できます。
 
-ダウンロードはこちらから(https://github.com/bal17nw-star/ClipPalette#)
+ダウンロードはこちらから(https://github.com/bal17nw-star/ClipPalette/releases/tag/v1.1.0)
 
 ---
 
@@ -144,7 +144,7 @@ npm run tauri build
 
 You can save an unlimited number of clips.
 
-Download here(https://github.com/bal17nw-star/ClipPalette#)
+Download here(https://github.com/bal17nw-star/ClipPalette/releases/tag/v1.1.0)
 
 ### Project Structure
 
