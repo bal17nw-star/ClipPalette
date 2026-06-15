@@ -17,20 +17,22 @@ pub fn open_db(path: &str) -> Result<Connection> {
 }
 
 pub fn init_schema(conn: &Connection) -> Result<()> {
+    // Base schema — clips table is defined without is_sensitive so that
+    // fresh installs go through the same migration path as upgrades.
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS clips (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            content     TEXT NOT NULL,
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            content      TEXT NOT NULL,
             content_hash TEXT NOT NULL UNIQUE,
-            clip_type   TEXT NOT NULL DEFAULT 'text',
-            source_app  TEXT,
-            created_at  TEXT NOT NULL,
-            is_pinned   INTEGER NOT NULL DEFAULT 0,
-            tags        TEXT NOT NULL DEFAULT '[]',
-            ogp_title   TEXT,
-            ogp_image   TEXT,
-            ogp_domain  TEXT,
-            image_data  TEXT
+            clip_type    TEXT NOT NULL DEFAULT 'text',
+            source_app   TEXT,
+            created_at   TEXT NOT NULL,
+            is_pinned    INTEGER NOT NULL DEFAULT 0,
+            tags         TEXT NOT NULL DEFAULT '[]',
+            ogp_title    TEXT,
+            ogp_image    TEXT,
+            ogp_domain   TEXT,
+            image_data   TEXT
         );
 
         CREATE INDEX IF NOT EXISTS idx_clips_created ON clips(created_at DESC);
@@ -50,6 +52,57 @@ pub fn init_schema(conn: &Connection) -> Result<()> {
             value TEXT NOT NULL
         );
     ")?;
+
+    run_migrations(conn)?;
+
+    Ok(())
+}
+
+/// Versioned migrations. Each version block is idempotent and runs inside a
+/// single transaction so a failure leaves the DB in its previous state.
+fn run_migrations(conn: &Connection) -> Result<()> {
+    let version: u32 = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'schema_version'",
+            [],
+            |r| r.get::<_, String>(0),
+        )
+        .optional()?
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
+
+    // --- v1 → v2: add is_sensitive column ---
+    if version < 2 {
+        let tx = conn.unchecked_transaction()?;
+
+        let has_sensitive: bool = {
+            let mut stmt = tx.prepare("PRAGMA table_info(clips)")?;
+            let names: Vec<String> = stmt
+                .query_map([], |row| row.get::<_, String>(1))?
+                .filter_map(|r| r.ok())
+                .collect();
+            names.iter().any(|n| n == "is_sensitive")
+        };
+
+        if !has_sensitive {
+            tx.execute(
+                "ALTER TABLE clips ADD COLUMN is_sensitive INTEGER NOT NULL DEFAULT 0",
+                [],
+            )?;
+        }
+
+        tx.execute(
+            "INSERT INTO settings (key, value) VALUES ('schema_version', '2')
+             ON CONFLICT(key) DO UPDATE SET value = '2'",
+            [],
+        )?;
+
+        tx.commit()?;
+    }
+
+    // Future migrations go here:
+    // if version < 3 { ... }
+
     Ok(())
 }
 
@@ -58,11 +111,11 @@ pub fn upsert_clip(conn: &Connection, item: &ClipItem) -> Result<i64> {
     conn.execute(
         "INSERT INTO clips
          (content, content_hash, clip_type, source_app, created_at, is_pinned, tags,
-          ogp_title, ogp_image, ogp_domain, image_data)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)
+          ogp_title, ogp_image, ogp_domain, image_data, is_sensitive)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)
          ON CONFLICT(content_hash) DO UPDATE SET
-           created_at  = excluded.created_at,
-           source_app  = excluded.source_app",
+           created_at   = excluded.created_at,
+           source_app   = excluded.source_app",
         params![
             item.content,
             item.content_hash,
@@ -75,6 +128,7 @@ pub fn upsert_clip(conn: &Connection, item: &ClipItem) -> Result<i64> {
             item.ogp_image,
             item.ogp_domain,
             item.image_data,
+            item.is_sensitive as i64,
         ],
     )?;
     // UPSERT後はhashでidを取得（last_insert_rowid はINSERTのみ更新される）
@@ -127,7 +181,7 @@ pub fn search_clips(conn: &Connection, opts: &SearchOptions) -> Result<Vec<ClipI
 
     let sql = format!(
         "SELECT id, content, content_hash, clip_type, source_app, created_at,
-                is_pinned, tags, ogp_title, ogp_image, ogp_domain, image_data
+                is_pinned, tags, ogp_title, ogp_image, ogp_domain, image_data, is_sensitive
          FROM clips
          {}
          ORDER BY is_pinned DESC, created_at DESC
@@ -157,6 +211,7 @@ fn row_to_clip(row: &rusqlite::Row<'_>) -> Result<ClipItem> {
         ogp_image: row.get(9)?,
         ogp_domain: row.get(10)?,
         image_data: row.get(11)?,
+        is_sensitive: row.get::<_, i64>(12)? != 0,
     })
 }
 

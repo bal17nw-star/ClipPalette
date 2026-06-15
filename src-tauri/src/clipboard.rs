@@ -98,6 +98,7 @@ fn run(app: &AppHandle, db: &DbConn) {
                                 ogp_image: None,
                                 ogp_domain: None,
                                 image_data: Some(b64),
+                                is_sensitive: false,
                             };
                             save_and_emit(app, db, item);
                         }
@@ -137,6 +138,20 @@ fn run(app: &AppHandle, db: &DbConn) {
                     ClipType::Text
                 };
 
+                let sensitive = is_sensitive_content(&text);
+
+                // Read sensitive_mode from settings (default: "masked")
+                // Lock is released before save_and_emit re-acquires it.
+                let sensitive_mode = db
+                    .lock()
+                    .ok()
+                    .and_then(|conn| db::get_setting(&conn, "sensitive_mode").ok().flatten())
+                    .unwrap_or_else(|| "masked".to_string());
+
+                if sensitive && sensitive_mode == "skip" {
+                    continue;
+                }
+
                 let item = ClipItem {
                     id: 0,
                     content: text,
@@ -150,6 +165,7 @@ fn run(app: &AppHandle, db: &DbConn) {
                     ogp_image: None,
                     ogp_domain: None,
                     image_data: None,
+                    is_sensitive: sensitive,
                 };
                 save_and_emit(app, db, item);
             }
@@ -303,6 +319,24 @@ fn foreground_app() -> Option<String> {
 #[cfg(not(target_os = "windows"))]
 fn foreground_app() -> Option<String> {
     None
+}
+
+fn is_sensitive_content(text: &str) -> bool {
+    use std::sync::OnceLock;
+    static PATTERNS: OnceLock<Vec<Regex>> = OnceLock::new();
+    let patterns = PATTERNS.get_or_init(|| {
+        let raw = [
+            r"sk-[a-zA-Z0-9]{20,}",
+            r"sk-proj-",
+            r"ghp_[a-zA-Z0-9]{36}",
+            r"github_pat_",
+            r"AKIA[0-9A-Z]{16}",
+            r"-----BEGIN .{0,30}PRIVATE KEY-----",
+            r"eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+",
+        ];
+        raw.iter().filter_map(|p| Regex::new(p).ok()).collect()
+    });
+    patterns.iter().any(|re| re.is_match(text))
 }
 
 fn is_blocked(app: &Option<String>) -> bool {

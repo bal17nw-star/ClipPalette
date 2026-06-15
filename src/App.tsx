@@ -7,6 +7,7 @@ import { SearchBar } from "./components/SearchBar";
 import { Sidebar } from "./components/Sidebar";
 import { ClipGrid } from "./components/ClipGrid";
 import { SnippetPanel } from "./components/SnippetPanel";
+import { SettingsPanel } from "./components/SettingsPanel";
 
 export default function App() {
   const {
@@ -14,8 +15,10 @@ export default function App() {
     selectedIndex,
     isDark,
     isSnippetPanelOpen,
+    isSettingsPanelOpen,
     loadClips,
     loadSnippets,
+    loadSettings,
     copyClip,
     deleteClip,
   } = useClipStore();
@@ -29,6 +32,7 @@ export default function App() {
   useEffect(() => {
     loadClips();
     loadSnippets();
+    loadSettings();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reload all clips whenever a new one arrives from the Rust backend
@@ -77,6 +81,8 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {isSettingsPanelOpen && <SettingsPanel />}
     </div>
   );
 }
