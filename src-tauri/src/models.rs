@@ -45,6 +45,7 @@ pub struct ClipItem {
     pub ogp_image: Option<String>,
     pub ogp_domain: Option<String>,
     pub image_data: Option<String>,
+    pub is_sensitive: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

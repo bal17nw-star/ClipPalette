@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pin, Trash2, Copy, Check, Tag, Code2, Link, FileText, Image } from "lucide-react";
+import { Pin, Trash2, Copy, Check, Tag, Code2, Link, FileText, Image, LockKeyhole } from "lucide-react";
 import clsx from "clsx";
 import { useClipStore } from "../store/clipStore";
 import { CodeBlock } from "./CodeBlock";
@@ -39,10 +39,11 @@ function formatTime(iso: string) {
 }
 
 export function ClipCard({ clip, isSelected, onClick }: Props) {
-  const { deleteClip, togglePin, copyClip, updateTags } = useClipStore();
+  const { deleteClip, togglePin, copyClip, updateTags, sensitiveMode } = useClipStore();
   const [copied, setCopied] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [showTagInput, setShowTagInput] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   // DBに "text" で保存済みでもフロントエンドで再検出してコードとして表示する
   const effectiveType =
@@ -105,20 +106,45 @@ export function ClipCard({ clip, isSelected, onClick }: Props) {
 
         {/* Content preview */}
         <div className="flex-1 min-w-0">
-          {effectiveType === "image" && clip.image_data ? (
-            <img
-              src={clip.image_data}
-              alt="Captured"
-              className="max-h-32 rounded object-cover"
-            />
-          ) : effectiveType === "code" ? (
-            <CodeBlock code={clip.content} />
-          ) : effectiveType === "url" ? (
-            <OGPPreview clip={clip} />
+          {clip.is_sensitive && sensitiveMode !== "visible" && !revealed ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); setRevealed(true); }}
+              className="flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400
+                italic hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+            >
+              <span>🔒</span>
+              <span>センシティブなコンテンツ — クリックして表示</span>
+            </button>
           ) : (
-            <p className="text-sm text-neutral-800 dark:text-neutral-200 line-clamp-4 break-words leading-relaxed">
-              {clip.content}
-            </p>
+            <div className="relative">
+              {effectiveType === "image" && clip.image_data ? (
+                <img
+                  src={clip.image_data}
+                  alt="Captured"
+                  className="max-h-32 rounded object-cover"
+                />
+              ) : effectiveType === "code" ? (
+                <CodeBlock code={clip.content} />
+              ) : effectiveType === "url" ? (
+                <OGPPreview clip={clip} />
+              ) : (
+                <p className="text-sm text-neutral-800 dark:text-neutral-200 line-clamp-4 break-words leading-relaxed">
+                  {clip.content}
+                </p>
+              )}
+              {clip.is_sensitive && sensitiveMode !== "visible" && revealed && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRevealed(false); }}
+                  title="再マスク"
+                  className="absolute top-0 right-0 flex items-center gap-1 px-1.5 py-0.5 rounded-md
+                    text-[10px] text-neutral-400 hover:text-violet-500
+                    hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                >
+                  <LockKeyhole size={10} />
+                  <span>再マスク</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

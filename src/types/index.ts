@@ -13,6 +13,7 @@ export interface ClipItem {
   ogp_image: string | null;
   ogp_domain: string | null;
   image_data: string | null;
+  is_sensitive: boolean;
 }
 
 export interface Snippet {

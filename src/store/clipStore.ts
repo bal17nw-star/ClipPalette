@@ -31,9 +31,12 @@ interface ClipStore {
   selectedIndex: number;
   isDark: boolean;
   isSnippetPanelOpen: boolean;
+  sensitiveMode: string;
+  isSettingsPanelOpen: boolean;
 
   loadClips: () => Promise<void>;
   loadSnippets: () => Promise<void>;
+  loadSettings: () => Promise<void>;
   deleteClip: (id: number) => Promise<void>;
   togglePin: (id: number) => Promise<void>;
   updateTags: (id: number, tags: string[]) => Promise<void>;
@@ -46,6 +49,8 @@ interface ClipStore {
   resetFilters: () => void;
   toggleDark: () => void;
   toggleSnippetPanel: () => void;
+  setSensitiveMode: (mode: string) => Promise<void>;
+  toggleSettingsPanel: () => void;
 
   upsertSnippet: (trigger: string, content: string, description?: string) => Promise<void>;
   deleteSnippet: (id: number) => Promise<void>;
@@ -63,6 +68,8 @@ export const useClipStore = create<ClipStore>((set, get) => ({
   selectedIndex: 0,
   isDark: window.matchMedia("(prefers-color-scheme: dark)").matches,
   isSnippetPanelOpen: false,
+  sensitiveMode: "masked",
+  isSettingsPanelOpen: false,
 
   // Always fetch without type/pinned/tag filters — those are applied client-side
   // so that no clip is ever hidden by a server-side filter mismatch.
@@ -90,6 +97,11 @@ export const useClipStore = create<ClipStore>((set, get) => ({
   loadSnippets: async () => {
     const snippets = await invoke<Snippet[]>("get_snippets");
     set({ snippets });
+  },
+
+  loadSettings: async () => {
+    const raw = await invoke<string | null>("get_setting", { key: "sensitive_mode" });
+    set({ sensitiveMode: raw ?? "masked" });
   },
 
   deleteClip: async (id) => {
@@ -180,6 +192,14 @@ export const useClipStore = create<ClipStore>((set, get) => ({
 
   toggleSnippetPanel: () =>
     set((s) => ({ isSnippetPanelOpen: !s.isSnippetPanelOpen })),
+
+  setSensitiveMode: async (mode) => {
+    await invoke("set_setting", { key: "sensitive_mode", value: mode });
+    set({ sensitiveMode: mode });
+  },
+
+  toggleSettingsPanel: () =>
+    set((s) => ({ isSettingsPanelOpen: !s.isSettingsPanelOpen })),
 
   upsertSnippet: async (trigger, content, description) => {
     await invoke("upsert_snippet", { trigger, content, description });

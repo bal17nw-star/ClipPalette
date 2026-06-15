@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { Search, X, Moon, Sun, Scissors } from "lucide-react";
+import { Search, X, Moon, Sun, Scissors, Settings } from "lucide-react";
 import { useClipStore } from "../store/clipStore";
 import type { Snippet } from "../types";
 
@@ -10,6 +10,7 @@ export function SearchBar() {
     isDark,
     toggleDark,
     toggleSnippetPanel,
+    toggleSettingsPanel,
     snippets,
     pasteSnippet,
   } = useClipStore();
@@ -155,6 +156,14 @@ export function SearchBar() {
         className="p-2 rounded-lg text-neutral-500 hover:text-violet-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
       >
         <Scissors size={16} />
+      </button>
+
+      <button
+        onClick={toggleSettingsPanel}
+        title="Settings"
+        className="p-2 rounded-lg text-neutral-500 hover:text-violet-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+      >
+        <Settings size={16} />
       </button>
 
       <button
