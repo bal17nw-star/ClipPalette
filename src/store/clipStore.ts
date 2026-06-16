@@ -117,7 +117,12 @@ export const useClipStore = create<ClipStore>((set, get) => ({
   togglePin: async (id) => {
     const pinned = await invoke<boolean>("toggle_pin", { id });
     set((s) => {
-      const clips = s.clips.map((c) => (c.id === id ? { ...c, is_pinned: pinned } : c));
+      const clips = s.clips
+        .map((c) => (c.id === id ? { ...c, is_pinned: pinned } : c))
+        .sort((a, b) => {
+          if (a.is_pinned !== b.is_pinned) return Number(b.is_pinned) - Number(a.is_pinned);
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
       const visibleClips = applyFilters(clips, s.selectedType, s.pinnedOnly, s.selectedTag);
       return { clips, visibleClips };
     });

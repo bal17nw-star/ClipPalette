@@ -135,6 +135,7 @@ pub async fn upsert_snippet(
     description: Option<String>,
 ) -> Result<i64, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
+    let trigger = trigger.trim_start_matches('/').to_string();
     db::upsert_snippet(&conn, &trigger, &content, description.as_deref())
         .map_err(|e| e.to_string())
 }
