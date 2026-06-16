@@ -328,9 +328,13 @@ fn is_sensitive_content(text: &str) -> bool {
         let raw = [
             r"sk-[a-zA-Z0-9]{20,}",
             r"sk-proj-",
-            r"ghp_[a-zA-Z0-9]{36}",
-            r"github_pat_",
+            r"ghp_[a-zA-Z0-9_]{20,}",
+            r"github_pat_[a-zA-Z0-9_]{10,}",
             r"AKIA[0-9A-Z]{16}",
+            // Login password patterns (value must be 6+ chars to reduce false positives)
+            r"(?i)\bpass(?:word|wd)?:\s+\S{6,}",
+            r"(?i)\b(?:pass(?:word|wd)?|pwd)=\S{6,}",
+            r"\b(?:[A-Z][A-Z0-9]*_)*PASSWORD=\S{6,}",
             r"-----BEGIN .{0,30}PRIVATE KEY-----",
             r"eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+",
         ];

@@ -115,7 +115,8 @@ pub fn upsert_clip(conn: &Connection, item: &ClipItem) -> Result<i64> {
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)
          ON CONFLICT(content_hash) DO UPDATE SET
            created_at   = excluded.created_at,
-           source_app   = excluded.source_app",
+           source_app   = excluded.source_app,
+           is_sensitive = excluded.is_sensitive",
         params![
             item.content,
             item.content_hash,
