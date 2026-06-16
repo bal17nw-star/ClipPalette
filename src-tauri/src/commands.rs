@@ -19,6 +19,12 @@ pub async fn delete_clip(db: State<'_, DbConn>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn toggle_sensitive(db: State<'_, DbConn>, id: i64) -> Result<bool, String> {
+    let conn = db.lock().map_err(|e| e.to_string())?;
+    db::toggle_sensitive(&conn, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn toggle_pin(db: State<'_, DbConn>, id: i64) -> Result<bool, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     db::toggle_pin(&conn, id).map_err(|e| e.to_string())

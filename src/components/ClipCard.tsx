@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pin, Trash2, Copy, Check, Tag, Code2, Link, FileText, Image, LockKeyhole } from "lucide-react";
+import { Pin, Trash2, Copy, Check, Tag, Code2, Link, FileText, Image, LockKeyhole, Shield } from "lucide-react";
 import clsx from "clsx";
 import { useClipStore } from "../store/clipStore";
 import { CodeBlock } from "./CodeBlock";
@@ -39,7 +39,7 @@ function formatTime(iso: string) {
 }
 
 export function ClipCard({ clip, isSelected, onClick }: Props) {
-  const { deleteClip, togglePin, copyClip, updateTags, sensitiveMode } = useClipStore();
+  const { deleteClip, togglePin, toggleSensitive, copyClip, updateTags, sensitiveMode } = useClipStore();
   const [copied, setCopied] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [showTagInput, setShowTagInput] = useState(false);
@@ -67,6 +67,13 @@ export function ClipCard({ clip, isSelected, onClick }: Props) {
   const handlePin = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await togglePin(clip.id);
+  };
+
+  const handleToggleSensitive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const wasNotSensitive = !clip.is_sensitive;
+    await toggleSensitive(clip.id);
+    if (wasNotSensitive) setRevealed(false);
   };
 
   const handleAddTag = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -205,6 +212,19 @@ export function ClipCard({ clip, isSelected, onClick }: Props) {
             className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-violet-500 transition-colors"
           >
             <Tag size={12} />
+          </button>
+
+          <button
+            onClick={handleToggleSensitive}
+            title={clip.is_sensitive ? "センシティブマークを解除" : "センシティブとしてマーク"}
+            className={clsx(
+              "p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors",
+              clip.is_sensitive
+                ? "text-violet-500"
+                : "text-neutral-400 hover:text-violet-500"
+            )}
+          >
+            <Shield size={12} />
           </button>
 
           <button

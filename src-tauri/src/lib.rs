@@ -120,6 +120,7 @@ pub fn run() {
             commands::get_clips,
             commands::delete_clip,
             commands::toggle_pin,
+            commands::toggle_sensitive,
             commands::update_tags,
             commands::update_ogp,
             commands::fetch_ogp,

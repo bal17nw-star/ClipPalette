@@ -39,6 +39,7 @@ interface ClipStore {
   loadSettings: () => Promise<void>;
   deleteClip: (id: number) => Promise<void>;
   togglePin: (id: number) => Promise<void>;
+  toggleSensitive: (id: number) => Promise<boolean>;
   updateTags: (id: number, tags: string[]) => Promise<void>;
   copyClip: (clip: ClipItem) => Promise<void>;
   setSearchQuery: (q: string) => void;
@@ -120,6 +121,16 @@ export const useClipStore = create<ClipStore>((set, get) => ({
       const visibleClips = applyFilters(clips, s.selectedType, s.pinnedOnly, s.selectedTag);
       return { clips, visibleClips };
     });
+  },
+
+  toggleSensitive: async (id) => {
+    const sensitive = await invoke<boolean>("toggle_sensitive", { id });
+    set((s) => {
+      const clips = s.clips.map((c) => (c.id === id ? { ...c, is_sensitive: sensitive } : c));
+      const visibleClips = applyFilters(clips, s.selectedType, s.pinnedOnly, s.selectedTag);
+      return { clips, visibleClips };
+    });
+    return sensitive;
   },
 
   updateTags: async (id, tags) => {

@@ -221,6 +221,19 @@ pub fn delete_clip(conn: &Connection, id: i64) -> Result<()> {
     Ok(())
 }
 
+pub fn toggle_sensitive(conn: &Connection, id: i64) -> Result<bool> {
+    conn.execute(
+        "UPDATE clips SET is_sensitive = CASE WHEN is_sensitive = 0 THEN 1 ELSE 0 END WHERE id = ?1",
+        params![id],
+    )?;
+    let sensitive: i64 = conn.query_row(
+        "SELECT is_sensitive FROM clips WHERE id = ?1",
+        params![id],
+        |r| r.get(0),
+    )?;
+    Ok(sensitive != 0)
+}
+
 pub fn toggle_pin(conn: &Connection, id: i64) -> Result<bool> {
     conn.execute(
         "UPDATE clips SET is_pinned = CASE WHEN is_pinned = 0 THEN 1 ELSE 0 END WHERE id = ?1",
